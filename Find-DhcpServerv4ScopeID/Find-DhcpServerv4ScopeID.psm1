@@ -1,11 +1,14 @@
 <#
 .Synopsis
-   Find ScopeID by IPv4-address
+   Find ScopeID by IP-address
 .DESCRIPTION
-   Find the ScopeID Which contains a specific ipv4 address.
+   Find the ScopeID Which contains a specific ip address.
 .EXAMPLE
    Find-DhcpServerv4ScopeID -IPaddress <IP address>
    Returns only the ScopeID.
+.EXAMPLE
+   Find-DhcpServerv4ScopeID -IPaddress <IP address> - ComputerName <DHCP_Server>
+   Returns the ScopeID from a remote HDCP server.
 .EXAMPLE
    Find-DhcpServerv4ScopeID -IPaddress <IP address> -Details
    Returns more information about the Scope.
@@ -13,8 +16,7 @@
   Author: Flemming Sørvollen Skaret
 #>
 
-
-function Find-DhcpServerv4ScopeID # ($IPaddress)
+function Find-DhcpServerv4ScopeID
 {
     [CmdletBinding()]
     [OutputType([int])]
@@ -22,16 +24,24 @@ function Find-DhcpServerv4ScopeID # ($IPaddress)
     (
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)]
         $IPaddress,
-        [switch]
-        $Details
-
+        [Parameter(Mandatory=$false)]
+        [string]$ComputerName,
+        [switch]$Details
     )
+
+
+
+    if ($ComputerName -eq "") #set localhost as default dhcp server if no input
+    {
+    [string]$ComputerName = $env:COMPUTERNAME
+    }
+
 
     try
     {
         Import-Module -Name DhcpServer
 
-        $all_scopes = Get-DhcpServerv4Scope
+        $all_scopes = Get-DhcpServerv4Scope -ComputerName $ComputerName
         $number_of_scopes = $all_scopes.Count
 
         Do
@@ -51,8 +61,8 @@ function Find-DhcpServerv4ScopeID # ($IPaddress)
 
         if ($Details)
         {
-            $DhcpServerv4Scope_Objects = Get-DhcpServerv4Scope -ScopeId $ScopeID | Select-Object *
-            $DhcpServerv4ScopeStatistics_Objects = Get-DhcpServerv4ScopeStatistics -ScopeId $ScopeID | Select-Object *
+            $DhcpServerv4Scope_Objects = Get-DhcpServerv4Scope -ScopeId $ScopeID -ComputerName $ComputerName | Select-Object *
+            $DhcpServerv4ScopeStatistics_Objects = Get-DhcpServerv4ScopeStatistics -ScopeId $ScopeID -ComputerName $ComputerName | Select-Object *
 
 
             Write-Host "Scope Info/Status:" -NoNewline
@@ -75,7 +85,7 @@ function Find-DhcpServerv4ScopeID # ($IPaddress)
 
     }
 
-    catch
+    catch #Errors, invalid server ect
     {
         Write-Host ERROR: Something went wrong -ForegroundColor Red
     }
