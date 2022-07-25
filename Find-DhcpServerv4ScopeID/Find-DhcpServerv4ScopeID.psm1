@@ -43,7 +43,8 @@ function Find-DhcpServerv4ScopeID
 
         $all_scopes = Get-DhcpServerv4Scope -ComputerName $ComputerName
         $number_of_scopes = $all_scopes.Count
-
+        $counter = -1
+         
         Do
         {
             $counter = $counter+1                                 
